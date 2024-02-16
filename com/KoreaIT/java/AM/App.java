@@ -1,6 +1,7 @@
 package com.KoreaIT.java.AM;
 
 import com.KoreaIT.java.AM.dto.Article;
+import com.KoreaIT.java.AM.dto.Member;
 import com.KoreaIT.java.AM.util.Util;
 
 import java.util.ArrayList;
@@ -9,9 +10,11 @@ import java.util.Scanner;
 
 public class App {
   private List<Article> articles;
+  private List<Member> members;
 
   public App() {
     articles = new ArrayList<>();
+    members = new ArrayList<>();
   }
 
   public void start() {
@@ -32,7 +35,35 @@ public class App {
         break;
       }
 
-      if (cmd.equals("article write")) {
+      if (cmd.equals("member join")) {
+        int id = members.size() + 1;
+        String regDate = Util.getNowDateStr();
+        System.out.print("로그인 아이디 : ");
+        String loginId = sc.nextLine();
+
+        String loginPw = null;
+        String loginPwCheck = null;
+        while (true) {
+          System.out.print("로그인 비밀번호 : ");
+          loginPw = sc.nextLine();
+          System.out.print("로그인 비밀번호 확인 : ");
+          loginPwCheck = sc.nextLine();
+          if (loginPw.equals(loginPwCheck) == false) {
+            System.out.println("비밀번호를 다시 입력하세요.");
+            continue;
+          }
+          break;
+        }
+
+        System.out.print("이름 : ");
+        String name = sc.nextLine();
+
+        Member member = new Member(id, regDate, loginId, loginPw, name);
+        members.add(member);
+
+        System.out.printf("%d번 회원 가입이 완료 되었습니다.\n", id);
+
+      } else if (cmd.equals("article write")) {
         int id = articles.size() + 1;
         String regDate = Util.getNowDateStr();
         System.out.print("제목 : ");
@@ -45,34 +76,33 @@ public class App {
 
         System.out.printf("%d번 글이 생성되었습니다.\n", id);
 
-      } else if (cmd.equals("article list")) {
+      } else if (cmd.startsWith("article list")) {
         if (articles.size() == 0) {
           System.out.println("게시글이 없습니다.");
           continue;
         } else {
           String searchKeyword = cmd.substring("article list".length()).trim();
-          System.out.printf("검색어: %s\n", searchKeyword);
+          System.out.printf("검색어 : %s\n", searchKeyword);
           List<Article> forPrintArticles = articles;
 
-          if (searchKeyword.length() > 0){
+          if (searchKeyword.length() > 0) {
             forPrintArticles = new ArrayList<>();
-            
-            for (Article article : articles){
-              if(article.title.contains(searchKeyword)){
+
+            for (Article article : articles) {
+              if (article.title.contains(searchKeyword)) {
                 forPrintArticles.add(article);
               }
             }
-            if (forPrintArticles.size() == 0){
-              System.out.printf("검색결과가 없습니다.");
+
+            if (forPrintArticles.size() == 0) {
+              System.out.println("검색 결과가 없습니다.");
               continue;
-              
             }
           }
 
-          
           System.out.println(" 번호 |   제목   | 조회수 ");
-          for (int i = articles.size() - 1; i >= 0; i--) {
-            Article article = articles.get(i);
+          for (int i = forPrintArticles.size() - 1; i >= 0; i--) {
+            Article article = forPrintArticles.get(i);
             System.out.printf("  %2d  |  %6s  |  %2d  \n", article.id, article.title, article.viewCnt);
           }
         }
@@ -81,16 +111,7 @@ public class App {
         String[] cmdBits = cmd.split(" ");
         int id = Integer.parseInt(cmdBits[2]);
 
-        Article foundArticle = null;
-
-        for (int i = 0; i < articles.size(); i++) {
-          Article article = articles.get(i);
-          if (article.id == id) {
-            foundArticle = article;
-            break;
-          }
-        }
-
+        Article foundArticle = getArticleById(id);
         if (foundArticle == null) {
           System.out.printf("%d번 게시물은 존재하지 않습니다.\n", id);
           continue;
@@ -107,16 +128,7 @@ public class App {
         String[] cmdBits = cmd.split(" ");
         int id = Integer.parseInt(cmdBits[2]);
 
-        int foundIndex = -1; // 인덱스 -1 : 존재하지 않는 인덱스의 대명사
-
-        for (int i = 0; i < articles.size(); i++) {
-          Article article = articles.get(i);
-          if (article.id == id) {
-            foundIndex = i;
-            break;
-          }
-        }
-
+        int foundIndex = getArticleIndexById(id);
         if (foundIndex == -1) {
           System.out.printf("%d번 게시물은 존재하지 않습니다.\n", id);
           continue;
@@ -129,15 +141,7 @@ public class App {
         String[] cmdBits = cmd.split(" ");
         int id = Integer.parseInt(cmdBits[2]);
 
-        Article foundArticle = null;
-
-        for (int i = 0; i < articles.size(); i++) {
-          Article article = articles.get(i);
-          if (article.id == id) {
-            foundArticle = article;
-            break;
-          }
-        }
+        Article foundArticle = getArticleById(id);
 
         if (foundArticle == null) {
           System.out.printf("%d번 게시물은 존재하지 않습니다.\n", id);
@@ -162,15 +166,23 @@ public class App {
     System.out.println("== 프로그램 종료 ==");
   }
 
-  private int getArticleById(int id) {
-    int i = 0;
+  private int getArticleIndexById(int id) {
+    int i = 0;  // articles의 인덱스를 나타내기 위한 수단
     for (Article article : articles) {
       if (article.id == id) {
         return i;
       }
       i++;
     }
-      return -1; //게시글의딘덱스를 찾지못한경우
+    return -1;  // 게시글의 인덱스를 찾지 못한 경우
+  }
+
+  private Article getArticleById(int id) {
+    int idx = getArticleIndexById(id);
+    if (idx == -1) {
+      return null;
+    }
+    return articles.get(idx);
   }
 
   private void makeTestData() {
